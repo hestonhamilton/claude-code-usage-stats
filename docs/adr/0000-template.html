@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<!--
+  ADR template. Copy to docs/adr/<NNNN>-<slug>.html, fill in, delete this comment.
+  Self-contained single file (inline <style>, no CDN/framework/linked stylesheet);
+  opens with `xdg-open <file>` or `python -m http.server`. Style block is shared with
+  docs/_doc-template.html — see CLAUDE.md "## Doc format".
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ADR-NNNN: Title</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1d21; --muted: #5c636b; --line: #e3e6ea;
+    --panel: #f6f8fa; --accent: #2f6feb; --code-bg: #f0f2f4;
+    --rec: #1a7f37; --pass: #1a7f37; --risk: #9a6700; --fail: #cf222e; --info: #2f6feb;
+    --rec-bg: #e7f5ec; --pass-bg: #e7f5ec; --risk-bg: #fdf2d6; --fail-bg: #fbe9e9; --info-bg: #e8f0fe;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1216; --fg: #e6e9ed; --muted: #9aa3ad; --line: #262c34;
+      --panel: #161b22; --accent: #5b8cff; --code-bg: #1a2029;
+      --rec: #4ac26b; --pass: #4ac26b; --risk: #d4a72c; --fail: #f8757f; --info: #5b8cff;
+      --rec-bg: #11271a; --pass-bg: #11271a; --risk-bg: #2b2410; --fail-bg: #2c1416; --info-bg: #131e36;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 60rem; margin: 0 auto; padding: 2.5rem 1.25rem 6rem; }
+  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 .25rem; }
+  h2 { font-size: 1.3rem; margin: 2.2rem 0 .6rem; padding-bottom: .3rem; border-bottom: 1px solid var(--line); }
+  h3 { font-size: 1.05rem; margin: 1.4rem 0 .4rem; }
+  p, li { color: var(--fg); }
+  a { color: var(--accent); }
+  code, kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9em; }
+  code { background: var(--code-bg); padding: .1em .35em; border-radius: 4px; }
+  kbd { background: var(--panel); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: .05em .4em; }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: .9rem 1rem; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+
+  .meta { color: var(--muted); font-size: .9rem; margin: 0 0 1.5rem; display: flex; flex-wrap: wrap; gap: .35rem 1rem; }
+  .meta b { color: var(--fg); font-weight: 600; }
+
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .95rem; }
+  th, td { text-align: left; padding: .5rem .7rem; border: 1px solid var(--line); vertical-align: top; }
+  thead th { background: var(--panel); }
+  tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--panel) 55%, transparent); }
+
+  .badge { display: inline-block; font-size: .78rem; font-weight: 700; letter-spacing: .02em;
+           padding: .1em .5em; border-radius: 999px; text-transform: uppercase; vertical-align: middle; }
+  .badge--rec  { color: var(--rec);  background: var(--rec-bg); }
+  .badge--pass { color: var(--pass); background: var(--pass-bg); }
+  .badge--risk { color: var(--risk); background: var(--risk-bg); }
+  .badge--fail { color: var(--fail); background: var(--fail-bg); }
+  .badge--info { color: var(--info); background: var(--info-bg); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--panel);
+             border-radius: 0 8px 8px 0; padding: .8rem 1rem; margin: 1rem 0; }
+  .callout--risk { border-left-color: var(--risk); }
+  .callout--fail { border-left-color: var(--fail); }
+  .callout > :first-child { margin-top: 0; }
+  .callout > :last-child  { margin-bottom: 0; }
+
+  details { border: 1px solid var(--line); border-radius: 8px; padding: .4rem .8rem; margin: 1rem 0; background: var(--panel); }
+  details > summary { cursor: pointer; font-weight: 600; }
+
+  blockquote { margin: 1rem 0; padding: .2rem 0 .2rem 1rem; border-left: 3px solid var(--accent); color: var(--muted); }
+
+  @media print { body { background: #fff; color: #000; } details { border: none; } }
+</style>
+</head>
+<body>
+<main>
+
+  <h1>ADR-NNNN: Title</h1>
+  <p class="meta">
+    <span><b>Status:</b> <span class="badge badge--info">Proposed</span> | Accepted | Superseded by ADR-MMMM | Deprecated</span>
+    <span><b>Date:</b> YYYY-MM-DD</span>
+    <span><b>Bead:</b> proj-cxr.X.Y</span>
+    <span><b>Deciders:</b> names</span>
+  </p>
+
+  <section>
+    <h2>Context</h2>
+    <p>What problem are we solving? What constraints apply? What project priors bound the space (UI/UX requirements, single-owner, NAS layout, downloader policy)? Keep short; link rather than restate.</p>
+  </section>
+
+  <section>
+    <h2>Decision</h2>
+    <p>The chosen option, stated as a positive declarative sentence in the present tense.</p>
+    <blockquote>e.g. We use SvelteKit for the frontend and FastAPI for the backend, communicating over a typed REST API generated from OpenAPI.</blockquote>
+  </section>
+
+  <section>
+    <h2>Alternatives considered</h2>
+    <p>List at least two real alternatives. If only one was considered, this is not yet a decision. Summarize the comparison, then flag the pick.</p>
+    <table>
+      <thead><tr><th>Alternative</th><th>Why attractive</th><th>Why it lost</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr><td>A — name</td><td>…</td><td>…</td><td><span class="badge badge--rec">chosen</span></td></tr>
+        <tr><td>B — name</td><td>…</td><td>…</td><td>—</td></tr>
+        <tr><td>C — name</td><td>…</td><td>…</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Consequences</h2>
+    <p>What becomes easier? What becomes harder? Which beads does this unblock or reshape? What follow-up decisions does it force?</p>
+    <ul>
+      <li><span class="badge badge--pass">positive</span> …</li>
+      <li><span class="badge badge--risk">negative</span> …</li>
+      <li><span class="badge badge--info">follow-up</span> decisions required: …</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Verification</h2>
+    <p>How will we know the decision is working? Cite the matching <code>.V</code> bead's acceptance and the metrics or behaviors we will watch after implementation.</p>
+  </section>
+
+  <section>
+    <h2>References</h2>
+    <ul>
+      <li>Bead: <code>bd show proj-cxr.X.Y</code></li>
+      <li>Related ADRs: ADR-MMMM, ADR-LLLL</li>
+      <li>External: reference apps, RFCs, papers</li>
+    </ul>
+  </section>
+
+</main>
+</body>
+</html>

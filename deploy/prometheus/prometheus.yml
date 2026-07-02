@@ -1,0 +1,22 @@
+# Prometheus scrape config for the cus /metrics exporter.
+#
+# Bundled stack: the `grafana` compose profile mounts this file and scrapes the
+# `web` service in-network.
+#
+# Existing (work) Prometheus: copy the `claude-usage-stats` job below into your
+# own prometheus.yml and point `targets` at wherever `cus serve` is reachable
+# (e.g. host:8765). The data is a periodic snapshot, so a slow scrape is fine.
+global:
+  scrape_interval: 60s
+  scrape_timeout: 15s
+
+scrape_configs:
+  - job_name: claude-usage-stats
+    metrics_path: /metrics
+    static_configs:
+      # In the bundled stack the web service listens on :8080 in-network
+      # (published to the host as :8765). For an external Prometheus, replace
+      # this with the reachable host:port of `cus serve`.
+      - targets: ["web:8080"]
+        labels:
+          instance: cus

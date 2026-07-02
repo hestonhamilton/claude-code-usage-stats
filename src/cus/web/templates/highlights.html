@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}Highlights - Claude Usage Stats{% endblock %}
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <h1>Highlights</h1>
+      <p>Derived usage signals across API-equivalent value, caching, tools, and activity shape.</p>
+      <p class="muted">Estimated pay-per-token API cost of this usage, not your subscription or plan spend.</p>
+    </div>
+    <form class="filters" action="/highlights" method="get">
+      <label>
+        Machine
+        <select name="machine">
+          <option value="">All machines</option>
+          {% for option in machine_options %}
+            <option value="{{ option }}" {% if option == filters.machine %}selected{% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        Start
+        <input type="date" name="start" value="{{ filters.start or '' }}">
+      </label>
+      <label>
+        End
+        <input type="date" name="end" value="{{ filters.end or '' }}">
+      </label>
+      <button type="submit">Apply</button>
+    </form>
+  </section>
+
+  {% if not has_db %}
+    <section class="empty-state">
+      <h2>No database found</h2>
+      <p>Set <code>CUS_DB</code> or run <code>cus serve --db PATH</code> against an existing ingest database.</p>
+    </section>
+  {% elif sidechain_share.events == 0 %}
+    <section class="empty-state">
+      <h2>No highlights yet</h2>
+      <p>No events match the selected filters.</p>
+    </section>
+  {% else %}
+    <section class="highlight-hero" aria-label="Cache savings">
+      <article class="panel highlight-card">
+        <span>Caching saved you</span>
+        <strong>{{ cache_savings.saved_usd|cost }}</strong>
+        <p>
+          {{ (cache_savings.effective_discount_pct * 100)|percent }} effective discount
+          from {{ cache_savings.cache_read_tokens|tokens }} cache-read tokens.
+        </p>
+      </article>
+      <article class="panel stat-card">
+        <span>Subagent share</span>
+        <strong>{{ (sidechain_share.pct_cost * 100)|percent }}</strong>
+        <p>{{ sidechain_share.sidechain_cost_usd|cost }} of {{ sidechain_share.cost_usd|cost }} across {{ sidechain_share.sidechain_events|intfmt }} sidechain events.</p>
+      </article>
+      <article class="panel stat-card">
+        <span>Web search / fetch</span>
+        <strong>{{ server_tool_usage.web_search_requests|intfmt }} / {{ server_tool_usage.web_fetch_requests|intfmt }}</strong>
+        <p>Server-tool requests counted separately from token pricing.</p>
+      </article>
+    </section>
+
+    <section class="grid two">
+      <article class="panel">
+        <h2>API-equivalent value by project</h2>
+        {% if projects %}
+          <div class="bars" aria-label="Project API-equivalent costs">
+            {% for row in projects %}
+              <div class="bar-row">
+                <span class="bar-label">{{ row.cwd }}</span>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width: {{ row.cost_usd|pct(max_project_cost) }}"></div>
+                </div>
+                <span class="bar-value">{{ row.cost_usd|cost }} · {{ row.tokens|tokens }} tokens</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="muted">No projects match the selected filters.</p>
+        {% endif %}
+      </article>
+      <article class="panel">
+        <h2>API-equivalent value by branch</h2>
+        {% if branches %}
+          <div class="bars" aria-label="Branch API-equivalent costs">
+            {% for row in branches %}
+              <div class="bar-row">
+                <span class="bar-label">{{ row.git_branch }}</span>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width: {{ row.cost_usd|pct(max_branch_cost) }}"></div>
+                </div>
+                <span class="bar-value">{{ row.cost_usd|cost }} · {{ row.tokens|tokens }} tokens</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="muted">No branches match the selected filters.</p>
+        {% endif %}
+      </article>
+    </section>
+
+    <section class="grid two">
+      <article class="panel">
+        <h2>Most expensive sessions</h2>
+        {% if top_sessions %}
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Session</th>
+                  <th>Machine</th>
+                  <th class="num">Messages</th>
+                  <th class="num">API-equiv. cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in top_sessions %}
+                  <tr>
+                    <td><a href="/session/{{ row.session_id }}">{{ row.title or row.session_id }}</a></td>
+                    <td>{{ row.machine_id or "<unknown>" }}</td>
+                    <td class="num">{{ row.message_count|intfmt }}</td>
+                    <td class="num">{{ row.cost_usd|cost }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="muted">No sessions match the selected filters.</p>
+        {% endif %}
+      </article>
+      <article class="panel">
+        <h2>Biggest single turns</h2>
+        {% if most_expensive_prompts %}
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Turn</th>
+                  <th>Model</th>
+                  <th>Time</th>
+                  <th class="num">API-equiv. cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in most_expensive_prompts %}
+                  <tr>
+                    <td class="clip">{{ row.uuid }}</td>
+                    <td>{{ row.model or "<unknown>" }}</td>
+                    <td>{{ row.ts }}</td>
+                    <td class="num">{{ row.cost_usd|cost }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="muted">No priced turns match the selected filters.</p>
+        {% endif %}
+      </article>
+    </section>
+
+    <section class="grid two">
+      <article class="panel">
+        <h2>Tool-use mix</h2>
+        {% if tool_use_mix %}
+          <div class="bars" aria-label="Tool-use counts">
+            {% for row in tool_use_mix %}
+              <div class="bar-row">
+                <span class="bar-label">{{ row.tool_name }}</span>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width: {{ row.count|pct(max_tool_count) }}"></div>
+                </div>
+                <span class="bar-value">{{ row.count|intfmt }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="muted">No tool uses match the selected filters.</p>
+        {% endif %}
+      </article>
+      <article class="panel">
+        <h2>Activity by hour</h2>
+        <div class="hour-strip" aria-label="Hourly token totals in UTC">
+          {% for row in hours %}
+            <div class="hour-column">
+              <div class="hour-bar-track">
+                <div class="hour-bar-fill" style="height: {{ row.tokens|pct(max_hour_tokens) }}"></div>
+              </div>
+              <span class="hour-label">{{ "%02d"|format(row.hour) }}</span>
+              <span class="hour-value">{{ row.tokens|tokens }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+  {% endif %}
+{% endblock %}

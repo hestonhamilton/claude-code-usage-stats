@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Sessions - Claude Usage Stats{% endblock %}
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <h1>Sessions</h1>
+      <p>Recent sessions from the usage database.</p>
+    </div>
+    <div class="segmented" aria-label="Sort sessions">
+      <a class="{% if order == 'recent' %}active{% endif %}" href="/sessions?order=recent">Recent</a>
+      <a class="{% if order == 'cost' %}active{% endif %}" href="/sessions?order=cost">API-equiv. cost</a>
+    </div>
+  </section>
+
+  {% if not has_db %}
+    <section class="empty-state">
+      <h2>No database found</h2>
+      <p>Set <code>CUS_DB</code> or run <code>cus serve --db PATH</code> against an existing ingest database.</p>
+    </section>
+  {% elif sessions %}
+    <section class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Session</th>
+              <th>Machine</th>
+              <th>Project</th>
+              <th class="num">Messages</th>
+              <th class="num">API-equiv. cost</th>
+              <th>Last seen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in sessions %}
+              <tr>
+                <td><a href="/session/{{ row.session_id }}">{{ row.title or row.session_id }}</a></td>
+                <td>{{ row.machine_id or "<unknown>" }}</td>
+                <td class="clip">{{ row.cwd or "<unknown>" }}</td>
+                <td class="num">{{ row.message_count|intfmt }}</td>
+                <td class="num">{{ row.cost_usd|cost }}</td>
+                <td>{{ row.last_ts or "" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% else %}
+    <section class="empty-state">
+      <h2>No sessions</h2>
+      <p>Ingest Claude Code transcript fixtures or point the dashboard at an existing database.</p>
+    </section>
+  {% endif %}
+{% endblock %}

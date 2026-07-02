@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Trends - Claude Usage Stats{% endblock %}
+{% block content %}
+  {% macro series_class(name, index) -%}
+    {%- if name == "<other>" -%}series-other{%- else -%}series-{{ index }}{%- endif -%}
+  {%- endmacro %}
+
+  <section class="page-heading">
+    <div>
+      <h1>Trends</h1>
+      <p>How usage evolves over time: trajectory, cache efficiency, and model migration.</p>
+      <p class="muted">Estimated pay-per-token API cost of this usage, not your subscription or plan spend.</p>
+    </div>
+    <form class="filters" action="/trends" method="get">
+      <label>
+        Machine
+        <select name="machine">
+          <option value="">All machines</option>
+          {% for option in machine_options %}
+            <option value="{{ option }}" {% if option == filters.machine %}selected{% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        Start
+        <input type="date" name="start" value="{{ filters.start or '' }}">
+      </label>
+      <label>
+        End
+        <input type="date" name="end" value="{{ filters.end or '' }}">
+      </label>
+      <button type="submit">Apply</button>
+    </form>
+  </section>
+
+  {% if not has_db %}
+    <section class="empty-state">
+      <h2>No database found</h2>
+      <p>Set <code>CUS_DB</code> or run <code>cus serve --db PATH</code> against an existing ingest database.</p>
+    </section>
+  {% elif not weeks %}
+    <section class="empty-state">
+      <h2>No trend data yet</h2>
+      <p>No events match the selected filters.</p>
+    </section>
+  {% else %}
+    <section class="panel">
+      <h2>Daily Cost &amp; 7-day Average</h2>
+      {% if trend %}
+        <div class="bars" aria-label="Daily API-equivalent cost with trailing 7-day average marker">
+          {% for row in trend %}
+            <div class="bar-row">
+              <span class="bar-label">{{ row.day }}</span>
+              <div class="bar-track trend-track">
+                <div class="bar-fill" style="width: {{ row.cost_usd|pct(max_trend_value) }}"></div>
+                <div class="bar-marker" style="left: {{ row.cost_ma|pct(max_trend_value) }}" title="7-day avg: {{ row.cost_ma|cost }}"></div>
+              </div>
+              <span class="bar-value">{{ row.cost_usd|cost }} · avg {{ row.cost_ma|cost }}</span>
+            </div>
+          {% endfor %}
+        </div>
+        <p class="muted">The vertical tick marks the trailing 7-day moving average for that day.</p>
+      {% else %}
+        <p class="muted">No daily cost data for the selected filters.</p>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <h2>Weekly Cost</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Week of</th>
+              <th class="num">Events</th>
+              <th class="num">Tokens</th>
+              <th class="num">API-equiv. cost</th>
+              <th class="num">WoW change</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in weeks %}
+              <tr>
+                <td>{{ row.week }}</td>
+                <td class="num">{{ row.events|intfmt }}</td>
+                <td class="num">{{ row.tokens|tokens }}</td>
+                <td class="num">{{ row.cost_usd|cost }}</td>
+                <td class="num">
+                  {% if row.wow_pct_change is none %}
+                    &mdash;
+                  {% else %}
+                    {{ (row.wow_pct_change * 100)|percent }}
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Cache Efficiency Over Time</h2>
+      {% if cache_timeline %}
+        <div class="bars" aria-label="Effective cache discount percentage by week">
+          {% for row in cache_timeline %}
+            <div class="bar-row">
+              <span class="bar-label">{{ row.week }}</span>
+              <div class="bar-track">
+                <div class="bar-fill" style="width: {{ (row.effective_discount_pct * 100)|pct(100) }}"></div>
+              </div>
+              <span class="bar-value">{{ (row.effective_discount_pct * 100)|percent }} · saved {{ row.saved_usd|cost }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="muted">No priced, cached events in the selected filters.</p>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <h2>Model Mix Over Time</h2>
+      {% if model_mix.periods %}
+        <div class="legend" aria-hidden="true">
+          {% for name in model_mix.top_models %}
+            <span class="legend-item">
+              <span class="legend-swatch {{ series_class(name, loop.index) }}"></span>
+              {{ name }}
+            </span>
+          {% endfor %}
+        </div>
+        <div class="stack-bars" aria-label="Cost share by model, per week">
+          {% for period in model_mix.periods %}
+            <div class="stack-bar-row">
+              <span class="bar-label">{{ period.week }}</span>
+              <div class="stack-bar" title="{{ period.week }} · {{ period.cost_usd|cost }} total">
+                {% for name in model_mix.top_models %}
+                  {% set model_cost = period.models[name] %}
+                  {% if model_cost %}
+                    <div
+                      class="stack-bar-segment {{ series_class(name, loop.index) }}"
+                      style="width: {{ model_cost|pct(period.cost_usd) }}"
+                      title="{{ name }}: {{ model_cost|cost }}"
+                    ></div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <p class="muted">Each bar is one week, segments proportional to that week's API-equivalent cost per model.</p>
+      {% else %}
+        <p class="muted">No model data for the selected filters.</p>
+      {% endif %}
+    </section>
+
+    <p class="muted">
+      Burn-rate velocity and forecast-to-ceiling are coming once plan snapshots are
+      captured — see the <a href="/plan">Plan</a> page.
+    </p>
+  {% endif %}
+{% endblock %}

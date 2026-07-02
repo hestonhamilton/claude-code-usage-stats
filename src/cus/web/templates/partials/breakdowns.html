@@ -1,0 +1,160 @@
+{% if not has_db %}
+  <section class="empty-state">
+    <h2>No database found</h2>
+    <p>Set <code>CUS_DB</code> or run <code>cus serve --db PATH</code> against an existing ingest database.</p>
+  </section>
+{% else %}
+  <section class="kpis" aria-label="Usage totals">
+    <article>
+      <span>Events</span>
+      <strong>{{ summary.events|intfmt }}</strong>
+    </article>
+    <article>
+      <span>Sessions</span>
+      <strong>{{ summary.sessions|intfmt }}</strong>
+    </article>
+    <article>
+      <span>Machines</span>
+      <strong>{{ summary.machines|intfmt }}</strong>
+    </article>
+    <article>
+      <span>API-equivalent value</span>
+      <strong>{{ summary.cost_usd|cost }}</strong>
+    </article>
+    <article>
+      <span>Tokens</span>
+      <strong>{{ summary.total_tokens|tokens }}</strong>
+    </article>
+  </section>
+
+  <section class="panel value-cluster" aria-label="Value realized">
+    <h2>Value Realized</h2>
+    {% if subscription_roi %}
+      <p class="roi-line">
+        <strong>{{ subscription_roi.api_value_usd|cost }}</strong> API-equivalent value ·
+        ~{{ subscription_roi.subscription_usd|cost }} paid ·
+        <strong>{{ subscription_roi.ratio|ratio }}</strong> return
+      </p>
+    {% endif %}
+    {% set has_plan_data = plan_status["5h"] or plan_status["7d"] %}
+    {% if has_plan_data %}
+      <div class="grid two" aria-label="Plan utilization gauges">
+        {% for window, label in [("5h", "Five hour"), ("7d", "Seven day")] %}
+          {% set current = plan_status[window] %}
+          {% set period = value_realized[window] %}
+          <div class="plan-card">
+            <span class="muted">{{ label }} window · 100% = limit reached, full value extracted</span>
+            {% if current %}
+              <strong class="plan-value">{{ current.used_percentage|percent }}</strong>
+              <div class="bar-track plan-meter">
+                <div class="bar-fill" style="width: {{ current.used_percentage|pct(100) }}"></div>
+              </div>
+              {% if period.windows_total %}
+                <p class="muted">
+                  Fully used {{ period.windows_realized }} of {{ period.windows_total }}
+                  {{ label|lower }} windows this period
+                  (avg {{ period.avg_pct|percent }}, peak {{ period.peak_pct|percent }}).
+                </p>
+              {% endif %}
+            {% else %}
+              <p class="muted">No {{ label|lower }} snapshots captured yet.</p>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">
+        No plan snapshots yet. Wire <code>scripts/setup-statusline.sh</code> and set
+        <code>rate_limit_log</code> in <code>config/machines.toml</code> to start tracking
+        plan utilization here. See the <a href="/plan">Plan</a> page.
+      </p>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <h2>Daily Usage</h2>
+    {% if days %}
+      <div class="bars" aria-label="Daily token totals">
+        {% for row in days %}
+          <div class="bar-row">
+            <span class="bar-label">{{ row.day }}</span>
+            <div class="bar-track">
+              <div class="bar-fill" style="width: {{ row.tokens|pct(max_day_tokens) }}"></div>
+            </div>
+            <span class="bar-value">{{ row.tokens|tokens }} tokens · {{ row.cost_usd|cost }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">No events match the selected filters.</p>
+    {% endif %}
+  </section>
+
+  <section class="grid two">
+    <article class="panel">
+      <h2>By Model</h2>
+      {% set rows = models %}
+      {% set label = "Model" %}
+      {% set key = "model" %}
+      {% include "partials/table.html" %}
+    </article>
+    <article class="panel">
+      <h2>By Machine</h2>
+      {% set rows = machines %}
+      {% set label = "Machine" %}
+      {% set key = "machine_id" %}
+      {% include "partials/table.html" %}
+    </article>
+  </section>
+
+  <section class="grid two">
+    <article class="panel">
+      <h2>By Project</h2>
+      {% set rows = projects %}
+      {% set label = "Project" %}
+      {% set key = "cwd" %}
+      {% include "partials/table.html" %}
+    </article>
+    <article class="panel">
+      <h2>By Branch</h2>
+      {% set rows = branches %}
+      {% set label = "Branch" %}
+      {% set key = "git_branch" %}
+      {% include "partials/table.html" %}
+    </article>
+  </section>
+
+  <section class="panel">
+    <h2>Top Sessions</h2>
+    {% if top_sessions %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Session</th>
+              <th>Machine</th>
+              <th>Project</th>
+              <th class="num">Messages</th>
+              <th class="num">API-equiv. cost</th>
+              <th>Last seen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in top_sessions %}
+              <tr>
+                <td><a href="/session/{{ row.session_id }}">{{ row.title or row.session_id }}</a></td>
+                <td>{{ row.machine_id or "<unknown>" }}</td>
+                <td class="clip">{{ row.cwd or "<unknown>" }}</td>
+                <td class="num">{{ row.message_count|intfmt }}</td>
+                <td class="num">{{ row.cost_usd|cost }}</td>
+                <td>{{ row.last_ts or "" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="muted">No sessions match the selected filters.</p>
+    {% endif %}
+  </section>
+{% endif %}

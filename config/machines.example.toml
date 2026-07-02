@@ -1,0 +1,40 @@
+# Copy this file to config/machines.toml on the central host and edit it.
+
+[central]
+db_path = "/data/cus.db"
+staging_dir = "/staging"
+pull_interval_minutes = 15
+price_refresh_hours = 24
+litellm_url = "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json"
+
+[[machines]]
+# SSH sources are pulled by the worker with rsync over ssh.
+id = "example-host"
+transport = "ssh"
+host = "192.168.10.20"
+user = "user"
+ssh_key = "/keys/id_ed25519"
+remote_path = "/home/user/.claude/projects"
+
+[[machines]]
+# Local sources are useful for tests or for ingesting a same-host directory.
+id = "central-local"
+transport = "local"
+path = "/home/user/.claude/projects"
+
+# Optional: powers the Subscription ROI ("worth it?") view on the Overview
+# (Metric B). Leave commented out to hide that view entirely — no crash, no
+# guessed price. List one [[subscription.periods]] per plan you've been on; a
+# plan change (e.g. Pro -> Max5) is two periods. Set `ended_on` on every past
+# plan and omit it on the current one. Billing is charged on `started_on` and
+# each monthly anniversary while active. Use your real prices/dates.
+# [[subscription.periods]]
+# plan = "pro"
+# monthly_usd = 20.0
+# started_on = 2026-01-01
+# ended_on = 2026-03-01
+#
+# [[subscription.periods]]
+# plan = "max5"
+# monthly_usd = 100.0
+# started_on = 2026-03-01

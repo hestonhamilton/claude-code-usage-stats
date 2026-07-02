@@ -1,0 +1,15 @@
+# Grafana dashboard provider — loads every dashboard JSON from the mounted
+# dashboards dir on startup. Used by the `grafana` compose profile.
+apiVersion: 1
+
+providers:
+  - name: cus
+    orgId: 1
+    folder: Claude
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

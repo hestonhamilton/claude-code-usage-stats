@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtualenvs
+.venv/
+venv/
+
+# Local databases / data
+*.db
+*.db-wal
+*.db-shm
+/data/
+/staging/
+
+# Real machine config + ssh deploy keys (example is committed)
+/config/machines.toml
+/keys/
+
+# OS / editor
+.DS_Store
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+.beads-credential-key

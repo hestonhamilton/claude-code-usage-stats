@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Overview - Claude Usage Stats{% endblock %}
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <h1>Overview</h1>
+      {% if summary.first_ts %}
+        <p>{{ summary.first_ts }} to {{ summary.last_ts }}</p>
+      {% else %}
+        <p>Read-only dashboard over the local usage database.</p>
+      {% endif %}
+      <p class="muted">Estimated pay-per-token API cost of this usage, not your subscription or plan spend.</p>
+      {% if freshness.last_ingest_at %}
+        <p class="freshness" title="{% for m in freshness.machines %}{{ m.machine_id }}: {{ m.last_ingest_at }}{% if not loop.last %}&#10;{% endif %}{% endfor %}">
+          <span class="dot" aria-hidden="true"></span>
+          Snapshot last ingested {{ freshness.last_ingest_at }}
+        </p>
+      {% endif %}
+    </div>
+    <form
+      class="filters"
+      action="/"
+      method="get"
+      hx-get="/partials/breakdowns"
+      hx-trigger="change, submit"
+      hx-target="#breakdowns"
+      hx-swap="innerHTML"
+    >
+      <label>
+        Machine
+        <select name="machine">
+          <option value="">All machines</option>
+          {% for option in machine_options %}
+            <option value="{{ option }}" {% if option == filters.machine %}selected{% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        Start
+        <input type="date" name="start" value="{{ filters.start or '' }}">
+      </label>
+      <label>
+        End
+        <input type="date" name="end" value="{{ filters.end or '' }}">
+      </label>
+      <button type="submit">Apply</button>
+    </form>
+  </section>
+
+  {# KPIs, Daily Usage, and all breakdowns live in the partial so the machine/date
+     filter (which swaps #breakdowns via htmx) updates every one of them. #}
+  <div id="breakdowns">
+    {% include "partials/breakdowns.html" %}
+  </div>
+{% endblock %}

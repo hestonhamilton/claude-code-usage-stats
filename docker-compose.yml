@@ -1,0 +1,77 @@
+services:
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: python -m cus.worker
+    environment:
+      CUS_CONFIG: /config/machines.toml
+    volumes:
+      - db:/data
+      - staging:/staging
+      - ./config:/config:ro
+      - ./keys:/keys:ro
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: uvicorn cus.web.app:app --host 0.0.0.0 --port 8080
+    environment:
+      CUS_DB: /data/cus.db
+    volumes:
+      # Read-write mount is required: SQLite WAL readers must attach the -shm
+      # wal-index. The app enforces read-only access via PRAGMA query_only.
+      - db:/data
+    ports:
+      # Host 8080 is commonly taken (e.g. a local model endpoint); publish on
+      # 8765. Change the host side (left) freely; container listens on 8080.
+      - "8765:8080"
+    depends_on:
+      - worker
+    restart: unless-stopped
+
+  # --- Optional Grafana stack -------------------------------------------------
+  # Only starts with `docker compose --profile grafana up`. Scrapes the web
+  # service's /metrics endpoint and provisions a ready-made dashboard. If you
+  # already run Prometheus + Grafana, skip this and instead scrape `cus serve`
+  # from your Prometheus (see deploy/prometheus/prometheus.yml) and import
+  # deploy/grafana/dashboards/claude-usage.json.
+  prometheus:
+    image: prom/prometheus:latest
+    profiles: ["grafana"]
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=90d
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - web
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    profiles: ["grafana"]
+    environment:
+      # Local, unauthenticated convenience defaults — change for any shared use.
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      # Grafana UI on host 3000 (container 3000).
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  db:
+  staging:
+  prometheus_data:
+  grafana_data:

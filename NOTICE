@@ -1,0 +1,6 @@
+claude-usage-stats
+
+The transcript parser approach is inspired by phuryn/claude-usage, which is
+licensed under the MIT License.
+
+Future cost pricing work will use the LiteLLM model price file.

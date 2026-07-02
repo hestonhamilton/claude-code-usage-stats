@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Plan - Claude Usage Stats{% endblock %}
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <h1>Plan</h1>
+      <p>Account-level rate-limit snapshots from Claude Code statusline captures.</p>
+      <p class="muted">This view is tied to your actual Claude plan windows.</p>
+    </div>
+  </section>
+
+  {% set has_plan_data = status["5h"] or status["7d"] %}
+  {% if not has_db %}
+    <section class="empty-state">
+      <h2>No database found</h2>
+      <p>Set <code>CUS_DB</code> or run <code>cus serve --db PATH</code> against an existing ingest database.</p>
+    </section>
+  {% elif not has_plan_data %}
+    <section class="empty-state">
+      <h2>No plan snapshots yet</h2>
+      <p>Install the statusline tee snippet and configure <code>rate_limit_log</code> on a machine to start collecting account-level plan usage.</p>
+    </section>
+  {% else %}
+    <section class="grid two" aria-label="Current plan usage">
+      {% for window, label in [("5h", "Five hour"), ("7d", "Seven day")] %}
+        {% set current = status[window] %}
+        <article class="panel plan-card">
+          <h2>{{ label }}</h2>
+          {% if current %}
+            <strong class="plan-value">{{ current.used_percentage|percent }}</strong>
+            <div class="bar-track plan-meter">
+              <div class="bar-fill" style="width: {{ current.used_percentage|pct(100) }}"></div>
+            </div>
+            <dl class="plan-meta">
+              <div>
+                <dt>Snapshot</dt>
+                <dd>{{ current.ts }}</dd>
+              </div>
+              <div>
+                <dt>Resets</dt>
+                <dd><time class="local-time" data-epoch="{{ current.resets_at }}">{{ current.resets_at }}</time></dd>
+              </div>
+            </dl>
+          {% else %}
+            <p class="muted">No {{ label|lower }} snapshots captured yet.</p>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </section>
+
+    <section class="grid two" aria-label="Plan timeline">
+      {% for window, label in [("5h", "Five hour"), ("7d", "Seven day")] %}
+        <article class="panel">
+          <h2>{{ label }} Timeline</h2>
+          {% set points = timelines[window] %}
+          {% if points %}
+            <div class="plan-strip" aria-label="{{ label }} raw snapshots">
+              {% for point in points %}
+                <span
+                  class="plan-strip-segment"
+                  title="{{ point.ts }} · {{ point.used_percentage|percent }}"
+                  style="height: {{ point.used_percentage|pct(100) }}"
+                ></span>
+              {% endfor %}
+            </div>
+            <p class="muted">Raw snapshots, carried forward until the next capture.</p>
+          {% else %}
+            <p class="muted">No {{ label|lower }} timeline data.</p>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </section>
+  {% endif %}
+
+  <script>
+    for (const element of document.querySelectorAll(".local-time[data-epoch]")) {
+      const epoch = Number(element.dataset.epoch);
+      if (Number.isFinite(epoch)) {
+        element.textContent = new Date(epoch * 1000).toLocaleString();
+      }
+    }
+  </script>
+{% endblock %}

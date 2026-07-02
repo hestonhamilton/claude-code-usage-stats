@@ -1,0 +1,16 @@
+# Grafana datasource provisioning — auto-wires the bundled Prometheus.
+# Only used by the self-contained `docker compose --profile grafana` stack.
+# For an existing (work) Grafana, you don't need this: import the dashboard
+# JSON and pick your own Prometheus in the datasource dropdown.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    # Service name from docker-compose (grafana profile).
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMethod: POST

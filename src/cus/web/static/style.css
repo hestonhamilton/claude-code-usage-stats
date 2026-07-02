@@ -1,0 +1,611 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f7f8fa;
+  --panel: #ffffff;
+  --text: #17202a;
+  --muted: #5f6b7a;
+  --line: #d7dde5;
+  --accent: #0f766e;
+  --accent-soft: #ccfbf1;
+  --shadow: 0 1px 2px rgb(20 30 45 / 0.08);
+  /* Categorical palette for the Trends model-mix chart: fixed hue order
+     (never cycled/reassigned), validated colorblind-safe (dataviz skill,
+     scripts/validate_palette.js) against this --panel surface. Segments are
+     always paired with a text label, never color-only. */
+  --series-1: #2a78d6;
+  --series-2: #1baf7a;
+  --series-3: #eda100;
+  --series-4: #008300;
+  --series-5: #4a3aa7;
+  --series-6: #e34948;
+  --series-other: #94a3b8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121417;
+    --panel: #1b1f24;
+    --text: #eef2f6;
+    --muted: #a6b0bd;
+    --line: #303844;
+    --accent: #5eead4;
+    --accent-soft: #134e4a;
+    --shadow: none;
+    --series-1: #3987e5;
+    --series-2: #199e70;
+    --series-3: #c98500;
+    --series-4: #008300;
+    --series-5: #9085e9;
+    --series-6: #e66767;
+    --series-other: #64748b;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.site-header {
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.nav,
+.page {
+  width: min(1180px, calc(100vw - 32px));
+  margin: 0 auto;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 56px;
+}
+
+.brand {
+  color: var(--text);
+  font-weight: 700;
+  margin-right: auto;
+}
+
+.page {
+  padding: 28px 0 48px;
+}
+
+.page-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  font-size: 30px;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+h2 {
+  font-size: 18px;
+  margin-bottom: 14px;
+}
+
+.page-heading p,
+.muted {
+  color: var(--muted);
+  margin-bottom: 0;
+}
+
+.freshness {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  cursor: default;
+}
+
+.freshness .dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.filters {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+label {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+select,
+input,
+button,
+.button,
+.segmented a {
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  padding: 7px 10px;
+  font: inherit;
+}
+
+button,
+.button,
+.segmented a.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #06211f;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.segmented {
+  display: flex;
+  gap: 8px;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.kpis article,
+.panel,
+.empty-state {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.kpis article {
+  padding: 16px;
+}
+
+.kpis span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.kpis strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 26px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.panel,
+.empty-state {
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.empty-state {
+  max-width: 720px;
+}
+
+.grid {
+  display: grid;
+  gap: 18px;
+}
+
+.grid.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.highlight-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.highlight-card,
+.stat-card {
+  display: grid;
+  align-content: center;
+  gap: 6px;
+}
+
+.highlight-card span,
+.stat-card span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.highlight-card strong,
+.stat-card strong {
+  display: block;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.highlight-card strong {
+  font-size: 42px;
+}
+
+.stat-card strong {
+  font-size: 28px;
+}
+
+.highlight-card p,
+.stat-card p {
+  color: var(--muted);
+  margin-bottom: 0;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--line);
+  padding: 9px 8px;
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+th {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+td.clip {
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.bars {
+  display: grid;
+  gap: 10px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 150px) minmax(120px, 1fr) minmax(120px, auto);
+  gap: 10px;
+  align-items: center;
+}
+
+.bar-label,
+.bar-value {
+  overflow-wrap: anywhere;
+}
+
+.bar-value {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.bar-track {
+  height: 14px;
+  background: var(--accent-soft);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  min-width: 2px;
+  background: var(--accent);
+}
+
+.hour-strip {
+  display: grid;
+  grid-template-columns: repeat(24, minmax(28px, 1fr));
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.hour-column {
+  display: grid;
+  grid-template-rows: 100px auto auto;
+  gap: 4px;
+  min-width: 28px;
+  text-align: center;
+}
+
+.hour-bar-track {
+  display: flex;
+  align-items: end;
+  height: 100px;
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.hour-bar-fill {
+  width: 100%;
+  min-height: 2px;
+  background: var(--accent);
+}
+
+.hour-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hour-value {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.value-cluster .roi-line {
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+
+.value-cluster .roi-line strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-card {
+  display: grid;
+  gap: 12px;
+}
+
+.plan-value {
+  display: block;
+  font-size: 34px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-meter {
+  height: 18px;
+}
+
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+  margin: 0;
+}
+
+.plan-meta dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.plan-meta dd {
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.plan-strip {
+  display: flex;
+  align-items: end;
+  gap: 2px;
+  height: 120px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  background: var(--accent-soft);
+  border-radius: 6px;
+}
+
+.plan-strip-segment {
+  flex: 1 1 8px;
+  min-width: 4px;
+  min-height: 2px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+}
+
+.details dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 24px;
+  margin: 0;
+}
+
+.details div {
+  min-width: 0;
+}
+
+.details dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.details dd {
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+}
+
+code {
+  background: var(--accent-soft);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+
+/* Trends: daily-cost bar with a trailing-average marker tick. */
+.trend-track {
+  position: relative;
+}
+
+.bar-marker {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  background: var(--text);
+  opacity: 0.65;
+}
+
+/* Trends: model-mix-over-time stacked bar + legend. Segments carry a title
+   tooltip and the legend always pairs a swatch with a text label, so
+   identity never depends on color alone. */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.stack-bars {
+  display: grid;
+  gap: 10px;
+}
+
+.stack-bar-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 150px) minmax(120px, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.stack-bar {
+  display: flex;
+  height: 20px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--line);
+}
+
+.stack-bar-segment {
+  flex: 0 0 auto;
+  min-width: 2px;
+  height: 100%;
+}
+
+.legend-swatch.series-1,
+.stack-bar-segment.series-1 {
+  background: var(--series-1);
+}
+
+.legend-swatch.series-2,
+.stack-bar-segment.series-2 {
+  background: var(--series-2);
+}
+
+.legend-swatch.series-3,
+.stack-bar-segment.series-3 {
+  background: var(--series-3);
+}
+
+.legend-swatch.series-4,
+.stack-bar-segment.series-4 {
+  background: var(--series-4);
+}
+
+.legend-swatch.series-5,
+.stack-bar-segment.series-5 {
+  background: var(--series-5);
+}
+
+.legend-swatch.series-6,
+.stack-bar-segment.series-6 {
+  background: var(--series-6);
+}
+
+.legend-swatch.series-other,
+.stack-bar-segment.series-other {
+  background: var(--series-other);
+}
+
+@media (max-width: 780px) {
+  .page-heading {
+    display: block;
+  }
+
+  .filters,
+  .segmented {
+    margin-top: 14px;
+  }
+
+  .kpis,
+  .highlight-hero,
+  .grid.two,
+  .details dl,
+  .plan-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .bar-row,
+  .stack-bar-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .bar-value {
+    text-align: left;
+  }
+}

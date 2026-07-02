@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cus"
+version = "0.1.0"
+description = "Local Claude Code transcript usage ingest"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [{ name = "claude-usage-stats contributors" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest", "httpx2"]
+web = ["fastapi", "uvicorn[standard]", "jinja2"]
+worker = ["apscheduler"]
+
+[project.scripts]
+cus = "cus.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+cus = ["web/templates/*.html", "web/templates/partials/*.html", "web/static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Session - Claude Usage Stats{% endblock %}
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <h1>{{ session.title or session.session_id }}</h1>
+      <p>{{ session.session_id }}</p>
+    </div>
+    <a class="button" href="/sessions">All sessions</a>
+  </section>
+
+  <section class="kpis" aria-label="Session totals">
+    <article>
+      <span>Messages</span>
+      <strong>{{ session.message_count|intfmt }}</strong>
+    </article>
+    <article>
+      <span>API-equivalent value</span>
+      <strong>{{ session.cost_usd|cost }}</strong>
+    </article>
+    <article>
+      <span>Tokens</span>
+      <strong>{{ session.total_tokens|tokens }}</strong>
+    </article>
+    <article>
+      <span>Machine</span>
+      <strong>{{ session.machine_id or "<unknown>" }}</strong>
+    </article>
+    {% if session.subagent and session.subagent.subagent_events %}
+      <article>
+        <span>Subagent share</span>
+        <strong>{{ session.subagent.subagent_cost_usd|cost }}</strong>
+        <span class="muted">{{ session.subagent.pct_cost|pct(1) }} of cost · {{ session.subagent.subagent_events|intfmt }} events</span>
+      </article>
+    {% endif %}
+  </section>
+
+  <section class="panel details">
+    <h2>Details</h2>
+    <dl>
+      <div><dt>Project</dt><dd>{{ session.cwd or "<unknown>" }}</dd></div>
+      <div><dt>First event</dt><dd>{{ session.first_ts or "" }}</dd></div>
+      <div><dt>Last event</dt><dd>{{ session.last_ts or "" }}</dd></div>
+      <div><dt>Input tokens</dt><dd>{{ session.input_tokens|intfmt }}</dd></div>
+      <div><dt>Output tokens</dt><dd>{{ session.output_tokens|intfmt }}</dd></div>
+      <div><dt>Cache creation</dt><dd>{{ session.cache_creation_tokens|intfmt }}</dd></div>
+      <div><dt>Cache read</dt><dd>{{ session.cache_read_tokens|intfmt }}</dd></div>
+    </dl>
+  </section>
+
+  <section class="grid two">
+    <article class="panel">
+      <h2>By Model</h2>
+      {% set rows = session.model_breakdown %}
+      {% if rows %}
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th class="num">Events</th>
+                <th class="num">Tokens</th>
+                <th class="num">API-equiv. cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in rows %}
+                <tr>
+                  <td>{{ row.model }}</td>
+                  <td class="num">{{ row.events|intfmt }}</td>
+                  <td class="num">{{ row.tokens|intfmt }}</td>
+                  <td class="num">{{ row.cost_usd|cost }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="muted">No model usage recorded.</p>
+      {% endif %}
+    </article>
+    <article class="panel">
+      <h2>Tool Use</h2>
+      {% if session.tool_use_mix %}
+        <div class="bars" aria-label="Tool use counts">
+          {% set max_tool_count = session.tool_use_mix[0].count %}
+          {% for row in session.tool_use_mix %}
+            <div class="bar-row">
+              <span class="bar-label">{{ row.tool_name }}</span>
+              <div class="bar-track">
+                <div class="bar-fill" style="width: {{ row.count|pct(max_tool_count) }}"></div>
+              </div>
+              <span class="bar-value">{{ row.count|intfmt }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="muted">No tool uses recorded.</p>
+      {% endif %}
+    </article>
+  </section>
+{% endblock %}
