@@ -56,6 +56,6 @@
 
 export.auto: true
 
-sync.remote: "git+ssh://git@github.com/OWNER/REPO.git"
+sync.remote: "git+ssh://git@github.com/hestonhamilton/claude-code-usage-stats.git"
 
 dolt.auto-commit: "on"
